@@ -7,20 +7,28 @@ import random
 # ── Music generation ──────────────────────────────────────────────────────────
 
 def make_menu_note(freq, duration, volume=0.12, wave_type="sine"):
-    sample_rate = 44100
-    frames = int(duration * sample_rate)
-    t = np.linspace(0, duration, frames, False)
+    import io, wave as wavemod
+    sr = 44100
+    n = int(duration * sr)
+    t = np.linspace(0, duration, n, False)
     if wave_type == "sine":
-        wave = np.sin(2 * np.pi * freq * t)
+        w = np.sin(2 * np.pi * freq * t)
     else:
-        wave = (np.sin(2 * np.pi * freq * t) * 0.6 +
-                np.sin(2 * np.pi * freq * 2 * t) * 0.3 +
-                np.sin(2 * np.pi * freq * 0.5 * t) * 0.1)
-    fade = min(int(sample_rate * 0.25), frames // 2)
-    wave[:fade] *= np.linspace(0, 1, fade)
-    wave[-fade:] *= np.linspace(1, 0, fade)
-    wave = (wave * 32767 * volume).astype(np.int16)
-    return pygame.sndarray.make_sound(np.column_stack((wave, wave)))
+        w = (np.sin(2 * np.pi * freq * t) * 0.6 +
+             np.sin(2 * np.pi * freq * 2 * t) * 0.3 +
+             np.sin(2 * np.pi * freq * 0.5 * t) * 0.1)
+    fade = min(int(sr * 0.25), n // 2)
+    w[:fade]  *= np.linspace(0, 1, fade)
+    w[-fade:] *= np.linspace(1, 0, fade)
+    w = np.clip(w * 32767 * volume, -32767, 32767).astype(np.int16)
+    buf = io.BytesIO()
+    with wavemod.open(buf, "wb") as wf:
+        wf.setnchannels(1)
+        wf.setsampwidth(2)
+        wf.setframerate(sr)
+        wf.writeframes(w.tobytes())
+    buf.seek(0)
+    return pygame.mixer.Sound(buf)
 
 # Gentle lullaby-style melody for the menu
 MELODY = [

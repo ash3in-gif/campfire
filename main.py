@@ -21,6 +21,8 @@ from progression import (MAPS, get_map, save_data, has_upgrade,
                           run_map_complete, run_map_select)
 
 pygame.init()
+pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=1024)
+pygame.mixer.set_num_channels(16)
 WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Below the Blue")
@@ -314,7 +316,6 @@ while True:
     fish_x += velocity_x
     fish_y += velocity_y
     actual_depth = fish_y + camera_y
-    
 
     # ── Gate block ────────────────────────────────────────────────────────────
     if gate:

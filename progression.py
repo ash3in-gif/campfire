@@ -13,8 +13,8 @@ MAPS = [
         "world_height": 800,
         "oxygen_max": 2400,       # generous
         "drain_mult": 0.6,
-        "memories_to_gate": 0,    # no gate
-        "gate_y": None,
+        "memories_to_gate": 3,
+        "gate_y": 580,
         "color_surface": (0, 160, 210),
         "color_deep": (0, 80, 140),
         "enemy_ids": [],
