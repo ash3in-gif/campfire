@@ -314,6 +314,7 @@ while True:
     fish_x += velocity_x
     fish_y += velocity_y
     actual_depth = fish_y + camera_y
+    
 
     # ── Gate block ────────────────────────────────────────────────────────────
     if gate:
