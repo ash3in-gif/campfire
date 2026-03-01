@@ -42,8 +42,14 @@ BASS = [
     (130, 2.0), (110, 2.0), (98,  2.0), (110, 2.0),
 ]
 
-melody_notes = [make_menu_note(f, d, 0.13) for f, d in MELODY]
-bass_notes   = [make_menu_note(f, d, 0.07, "rich") for f, d in BASS]
+melody_notes = None
+bass_notes   = None
+
+def _init_music():
+    global melody_notes, bass_notes
+    if melody_notes is None:
+        melody_notes = [make_menu_note(f, d, 0.13) for f, d in MELODY]
+        bass_notes   = [make_menu_note(f, d, 0.07, "rich") for f, d in BASS]
 
 # ── Shared drawing helpers ─────────────────────────────────────────────────────
 
@@ -99,6 +105,7 @@ class MusicPlayer:
         self.enabled = True
 
     def update(self):
+        _init_music()
         if not self.enabled:
             return
         self.melody_timer -= 1
@@ -274,6 +281,7 @@ def run_settings(screen, clock):
 
 
 def run_title_screen(screen, clock):
+    _init_music()
     font_title  = pygame.font.SysFont(None, 82)
     font_sub    = pygame.font.SysFont(None, 34)
     font_btn    = pygame.font.SysFont(None, 32)
