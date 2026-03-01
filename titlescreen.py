@@ -7,7 +7,7 @@ import random
 # ── Music generation ──────────────────────────────────────────────────────────
 
 def make_menu_note(freq, duration, volume=0.12, wave_type="sine"):
-    import io, wave as wavemod
+    import tempfile, os, wave as wavemod
     sr = 44100
     n = int(duration * sr)
     t = np.linspace(0, duration, n, False)
@@ -21,14 +21,17 @@ def make_menu_note(freq, duration, volume=0.12, wave_type="sine"):
     w[:fade]  *= np.linspace(0, 1, fade)
     w[-fade:] *= np.linspace(1, 0, fade)
     w = np.clip(w * 32767 * volume, -32767, 32767).astype(np.int16)
-    buf = io.BytesIO()
-    with wavemod.open(buf, "wb") as wf:
+    tmp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+    tmp_path = tmp.name
+    tmp.close()
+    with wavemod.open(tmp_path, 'wb') as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(sr)
         wf.writeframes(w.tobytes())
-    buf.seek(0)
-    return pygame.mixer.Sound(buf)
+    snd = pygame.mixer.Sound(tmp_path)
+    os.unlink(tmp_path)
+    return snd
 
 # Gentle lullaby-style melody for the menu
 MELODY = [
@@ -318,9 +321,9 @@ def run_title_screen(screen, clock):
                 for label, rect, action in buttons:
                     if pygame.Rect(rect).collidepoint(mx, my):
                         if action == "play":
-                            return  # start game
+                            return "play"
                         elif action == "mapselect":
-                            return  # handled in main
+                            return "mapselect" 
                         elif action == "htp":
                             run_how_to_play(screen, clock)
                         elif action == "settings":
@@ -329,7 +332,7 @@ def run_title_screen(screen, clock):
                             pygame.quit(); sys.exit()
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_RETURN or event.key == pygame.K_SPACE:
-                    return
+                    return "play" 
 
         t += 1
         music_player.update()

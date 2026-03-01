@@ -6,6 +6,7 @@ import io
 import wave
 
 def _make_sound(freq, duration, volume):
+    import tempfile, os
     sr = 44100
     n = int(duration * sr)
     t = np.linspace(0, duration, n, False)
@@ -14,23 +15,34 @@ def _make_sound(freq, duration, volume):
     w[:fade]  *= np.linspace(0, 1, fade)
     w[-fade:] *= np.linspace(1, 0, fade)
     w = np.clip(w * 32767 * volume, -32767, 32767).astype(np.int16)
-    buf = io.BytesIO()
-    with wave.open(buf, 'wb') as wf:
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    tmp_path = tmp.name
+    tmp.close()
+    with wave.open(tmp_path, "wb") as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(sr)
         wf.writeframes(w.tobytes())
-    buf.seek(0)
-    return pygame.mixer.Sound(buf)
+    snd = pygame.mixer.Sound(tmp_path)
+    os.unlink(tmp_path)
+    return snd
 
-reef_notes = [_make_sound(f, 2.0, 0.13) for f in [523, 659, 784, 880, 698]]
-deep_notes = [_make_sound(f, 3.0, 0.10) for f in [110, 130, 98, 87, 146]]
-pulse_note = _make_sound(55, 0.5, 0.07)
+reef_notes = None
+deep_notes = None
+pulse_note = None
 
 _last_note  = 0.0
 _last_pulse = 0.0
 
+def _init_sounds():
+    global reef_notes, deep_notes, pulse_note
+    if reef_notes is None:
+        reef_notes = [_make_sound(f, 2.0, 0.13) for f in [523, 659, 784, 880, 698]]
+        deep_notes = [_make_sound(f, 3.0, 0.10) for f in [110, 130, 98, 87, 146]]
+        pulse_note = _make_sound(55, 0.5, 0.07)
+
 def update_sound(depth):
+    _init_sounds()
     global _last_note, _last_pulse
     now = time.time()
     interval = 1.5 + depth * 5.0

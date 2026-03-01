@@ -156,15 +156,17 @@ sonar_timer   = 0
 
 # ── Title + Map select loop (back returns to title) ─────────────────────
 while True:
-    run_title_screen(screen, clock)
-    chosen = run_map_select(screen, clock)
-    if chosen:
-        current_map_id = chosen
+    action = run_title_screen(screen, clock)
+    if action == 'play':
         reset_state(current_map_id)
         break
-    # back pressed — loop to title
-
-# ── Helpers ───────────────────────────────────────────────────────────────────
+    elif action == 'mapselect':
+        chosen = run_map_select(screen, clock)
+        if chosen:
+            current_map_id = chosen
+            reset_state(current_map_id)
+            break
+    # back pressed on map select - loop back to title
 def get_depth_ratio(y, world_h):
     return min(y / world_h, 1.0)
 
@@ -217,12 +219,17 @@ while True:
                     reset_state(current_map_id)
                     continue
                 elif result == "menu":
-                    run_title_screen(screen, clock)
-                    chosen = run_map_select(screen, clock)
-                    if chosen is None:
-                        chosen = current_map_id
-                    current_map_id = chosen
-                    reset_state(current_map_id)
+                    while True:
+                        action = run_title_screen(screen, clock)
+                        if action == 'play':
+                            reset_state(current_map_id)
+                            break
+                        elif action == 'mapselect':
+                            chosen = run_map_select(screen, clock)
+                            if chosen:
+                                current_map_id = chosen
+                                reset_state(current_map_id)
+                                break
                     continue
                 elif result == "quit":
                     pygame.quit(); sys.exit()

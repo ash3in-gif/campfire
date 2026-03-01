@@ -7,8 +7,8 @@ import io
 import wave
 import struct
 
-def _make_wav_bytes(freq, duration, volume):
-    """Generate a WAV file in memory — bypasses sndarray format issues entirely."""
+def _make_sound(freq, duration, volume):
+    import tempfile, os
     sr = 44100
     n = int(duration * sr)
     t = np.linspace(0, duration, n, False)
@@ -20,19 +20,17 @@ def _make_wav_bytes(freq, duration, volume):
     wave_data[:fade]  *= np.linspace(0, 1, fade)
     wave_data[-fade:] *= np.linspace(1, 0, fade)
     wave_data = np.clip(wave_data * 32767 * volume, -32767, 32767).astype(np.int16)
-
-    buf = io.BytesIO()
-    with wave.open(buf, 'wb') as wf:
+    tmp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+    tmp_path = tmp.name
+    tmp.close()
+    with wave.open(tmp_path, 'wb') as wf:
         wf.setnchannels(1)
         wf.setsampwidth(2)
         wf.setframerate(sr)
         wf.writeframes(wave_data.tobytes())
-    buf.seek(0)
-    return buf
-
-def _make_sound(freq, duration, volume):
-    buf = _make_wav_bytes(freq, duration, volume)
-    return pygame.mixer.Sound(buf)
+    snd = pygame.mixer.Sound(tmp_path)
+    os.unlink(tmp_path)
+    return snd
 
 def run_death_screen(screen, clock):
     font_big   = pygame.font.SysFont(None, 80)

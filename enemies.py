@@ -83,7 +83,7 @@ class PatrolFish:
 
 
 class BlindHunter:
-    """Map 3 — can't see, but follows sound (fish speed)"""
+    """Map 3 -- fast dark hunter fish that tracks sound (fish speed)"""
     def __init__(self, x, y):
         self.x = float(x)
         self.y = float(y)
@@ -92,37 +92,34 @@ class BlindHunter:
         self.alert = False
         self.caught = False
         self.hearing_range = 200
+        self.direction = 1
 
     def update(self, fish_x, fish_y, camera_y, fish_speed):
         screen_y = self.y - camera_y
         fish_screen_y = fish_y
-
         dist = math.sqrt((fish_x - self.x) ** 2 + (fish_screen_y - screen_y) ** 2)
-
-        # Only hears fast movement
-        noise_range = self.hearing_range * (fish_speed / 3.0)
-
+        noise_range = self.hearing_range * max(0.3, fish_speed / 2.5)
         if dist < noise_range:
             self.alert = True
             dx = fish_x - self.x
             dy = fish_screen_y - screen_y
             length = math.sqrt(dx ** 2 + dy ** 2) or 1
-            chase_speed = 1.6 + fish_speed * 0.3
+            chase_speed = 2.2 + fish_speed * 0.4
             self.vx = dx / length * chase_speed
-            self.vy = dy / length * chase_speed * 0.4
+            self.vy = dy / length * chase_speed * 0.5
+            self.direction = 1 if dx > 0 else -1
         else:
             self.alert = False
-            # Slow random drift
-            self.vx += random.uniform(-0.1, 0.1)
-            self.vy += random.uniform(-0.05, 0.05)
-            self.vx = max(-0.6, min(0.6, self.vx))
-            self.vy = max(-0.3, min(0.3, self.vy))
-
+            self.vx += random.uniform(-0.15, 0.15)
+            self.vy += random.uniform(-0.06, 0.06)
+            self.vx = max(-0.8, min(0.8, self.vx))
+            self.vy = max(-0.4, min(0.4, self.vy))
+            if abs(self.vx) > 0.1:
+                self.direction = 1 if self.vx > 0 else -1
         self.x += self.vx
         self.y += self.vy
         self.x = max(30, min(770, self.x))
-
-        if dist < 24:
+        if dist < 28:
             self.caught = True
 
     def draw(self, screen, camera_y):
@@ -130,28 +127,28 @@ class BlindHunter:
         if sy < -40 or sy > 680:
             return
         t = pygame.time.get_ticks()
-        glow = int(20 + 15 * math.sin(t * 0.003))
-
-        # Dark blob with faint glow
-        s = pygame.Surface((60, 40), pygame.SRCALPHA)
-        pygame.draw.ellipse(s, (10, 10, 20, 180), (0, 0, 60, 40))
+        ix = int(self.x)
+        col = (160, 40, 40) if self.alert else (100, 30, 30)
+        # Body - bigger than patrol fish
+        pygame.draw.ellipse(screen, col, (ix - 22, sy - 12, 44, 24))
+        # Tail
+        if self.direction > 0:
+            pygame.draw.polygon(screen, col, [(ix-22, sy), (ix-38, sy-10), (ix-38, sy+10)])
+        else:
+            pygame.draw.polygon(screen, col, [(ix+22, sy), (ix+38, sy-10), (ix+38, sy+10)])
+        # Dorsal fin
+        pygame.draw.polygon(screen, col, [(ix-8, sy-12), (ix+8, sy-12), (ix, sy-24)])
+        # Eye
+        ex = ix + (14 if self.direction > 0 else -14)
+        pygame.draw.circle(screen, (255, 60, 60), (ex, sy-2), 5)
+        pygame.draw.circle(screen, (0, 0, 0),     (ex, sy-2), 3)
+        pygame.draw.circle(screen, (255, 255, 255), (ex+1, sy-3), 1)
+        # Alert glow
         if self.alert:
-            pygame.draw.ellipse(s, (80, 0, 0, 100), (0, 0, 60, 40))
-        screen.blit(s, (int(self.x) - 30, sy - 20))
-
-        # No visible eyes — just a faint mouth slit
-        pygame.draw.line(screen, (40, 0, 0),
-                         (int(self.x) - 8, sy + 5),
-                         (int(self.x) + 8, sy + 5), 1)
-
-        # Sound ripple when alert
-        if self.alert:
-            for r in range(3):
-                rr = 20 + r * 15 + (t // 20) % 15
-                rs = pygame.Surface((rr * 2, rr * 2), pygame.SRCALPHA)
-                pygame.draw.circle(rs, (60, 0, 0, 40), (rr, rr), rr, 1)
-                screen.blit(rs, (int(self.x) - rr, sy - rr))
-
+            pulse = int(40 + 30 * math.sin(t * 0.01))
+            s = pygame.Surface((70, 70), pygame.SRCALPHA)
+            pygame.draw.circle(s, (180, 0, 0, pulse), (35, 35), 32, 2)
+            screen.blit(s, (ix-35, sy-35))
 
 class OriginCircler:
     """Map 5 — massive slow creature that orbits the center"""
